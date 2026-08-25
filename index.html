@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UAV Flight Simulator — Engine & Flight Telemetry</title>
+  <meta name="description" content="Interactive UAV flight simulator with real-time engine and flight telemetry for Digital Twin integration." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+
+  <!-- 3D Canvas (background) -->
+  <canvas id="uav-canvas"></canvas>
+
+  <!-- ===== TELEMETRY OVERLAY ===== -->
+  <div id="telemetry">
+
+    <!-- Top Left: Speed -->
+    <div class="panel panel-top-left">
+      <span class="panel-label">SPEED</span>
+      <div class="panel-value-row">
+        <span class="panel-value" id="tel-speed">0</span>
+        <span class="panel-unit">km/h</span>
+      </div>
+      <div class="panel-sub-row">
+        <span class="panel-sub-label">V/S</span>
+        <span class="panel-sub-value" id="tel-vert-speed">+0.0</span>
+        <span class="panel-sub-unit">m/s</span>
+      </div>
+    </div>
+
+    <!-- Top Right: Altitude -->
+    <div class="panel panel-top-right">
+      <span class="label">ALTITUDE</span>
+      <div class="value"><span id="tel-altitude">0</span> <span class="unit">m</span></div>
+      
+      <div class="pressure-group">
+        <span class="label" style="font-size: 0.7rem; color: rgba(255, 255, 255, 0.5);">AIR PRESSURE</span>
+        <div class="value" style="font-size: 1.2rem; margin-top: -2px;"><span id="tel-pressure">101.3</span> <span class="unit">kPa</span></div>
+      </div>
+    </div>
+
+    <!-- Large Fuel Panel -->
+    <div class="panel panel-fuel">
+      <div class="fuel-header">
+        <span class="label">FUEL</span>
+        <span class="fuel-pct" id="tel-fuel">100%</span>
+      </div>
+      <div class="fuel-bar-large-container">
+        <div class="fuel-fill-large" id="fuel-fill" style="width: 100%"></div>
+      </div>
+      <div class="fuel-flow-group">
+        Fuel Flow: <span id="tel-fuel-flow">0.0</span> L/hr
+      </div>
+    </div>
+
+    <!-- Right Side: Throttle Bar -->
+    <div class="panel panel-throttle" id="throttle-panel">
+      <span class="panel-label">THROTTLE</span>
+      <div class="throttle-bar-container">
+        <span class="throttle-value" id="tel-throttle" style="margin-bottom: 4px; font-size: 0.9rem; color: var(--accent);">0%</span>
+        <div class="throttle-bar-bg" id="throttle-bar-bg">
+          <div class="throttle-bar-fill" id="throttle-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Left: Heading Compass -->
+    <div class="panel panel-bottom-left">
+      <div class="compass-ring" id="compass-ring">
+        <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="60" cy="60" r="52" stroke="rgba(255,255,255,0.1)" stroke-width="1.5" />
+          <circle cx="60" cy="60" r="42" stroke="rgba(255,255,255,0.05)" stroke-width="1" />
+          <!-- Cardinal marks -->
+          <text x="60" y="16" text-anchor="middle" fill="#fff" font-size="9" font-weight="600" font-family="Inter">N</text>
+          <text x="60" y="112" text-anchor="middle" fill="#888" font-size="9" font-weight="500" font-family="Inter">S</text>
+          <text x="108" y="64" text-anchor="middle" fill="#888" font-size="9" font-weight="500" font-family="Inter">E</text>
+          <text x="12" y="64" text-anchor="middle" fill="#888" font-size="9" font-weight="500" font-family="Inter">W</text>
+          <!-- Tick marks -->
+          <line x1="60" y1="9" x2="60" y2="18" stroke="#fff" stroke-width="2"/>
+          <line x1="60" y1="102" x2="60" y2="111" stroke="#666" stroke-width="1.5"/>
+          <line x1="9" y1="60" x2="18" y2="60" stroke="#666" stroke-width="1.5"/>
+          <line x1="102" y1="60" x2="111" y2="60" stroke="#666" stroke-width="1.5"/>
+          <!-- Heading needle -->
+          <g id="compass-needle">
+            <polygon points="60,22 55,60 60,55 65,60" fill="#22cc77"/>
+            <polygon points="60,98 55,60 60,65 65,60" fill="#555"/>
+          </g>
+        </svg>
+      </div>
+      <span class="panel-label">HEADING</span>
+      <div class="panel-value-row">
+        <span class="panel-value heading-value" id="tel-heading">000</span>
+        <span class="panel-unit">°</span>
+      </div>
+    </div>
+
+    <!-- Bottom Center: Engine Telemetry -->
+    <div class="panel panel-bottom-center">
+      <div class="engine-grid">
+        <div class="engine-item">
+          <span class="engine-label">RPM</span>
+          <span class="engine-value" id="tel-rpm">0</span>
+        </div>
+        <div class="engine-item">
+          <span class="engine-label">CHT</span>
+          <span class="engine-value" id="tel-cht">85°C</span>
+        </div>
+        <div class="engine-item">
+          <span class="engine-label">EGT</span>
+          <span class="engine-value" id="tel-egt">250°C</span>
+        </div>
+        <div class="engine-item">
+          <span class="engine-label">OIL PRESS</span>
+          <span class="engine-value" id="tel-oil-press">0 psi</span>
+        </div>
+        <div class="engine-item">
+          <span class="engine-label">OIL TEMP</span>
+          <span class="engine-value" id="tel-oil-temp">40°C</span>
+        </div>
+        <div class="engine-item">
+          <span class="engine-label">VIBRATION</span>
+          <span class="engine-value" id="tel-vibration">0.0</span>
+        </div>
+      </div>
+
+      <!-- Status row -->
+      <div class="status-row">
+        <div class="status-item">
+          <span class="status-icon status-dot">●</span>
+          <span class="status-label">STATUS</span>
+          <span class="status-value status-normal" id="tel-status">IDLE</span>
+        </div>
+        <div class="status-item">
+          <span class="status-icon">📡</span>
+          <span class="status-label">DIST</span>
+          <span class="status-value" id="tel-distance">0.00 km</span>
+        </div>
+        <div class="status-item">
+          <span class="status-icon">⏱</span>
+          <span class="status-label">TIME</span>
+          <span class="status-value" id="tel-time">00:00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Right: GPS -->
+    <div class="panel panel-bottom-right">
+      <span class="panel-label">GPS</span>
+      <div class="gps-coords">
+        <div class="gps-row">
+          <span class="gps-label">LAT</span>
+          <span class="gps-value" id="tel-lat">28.6139°N</span>
+        </div>
+        <div class="gps-row">
+          <span class="gps-label">LON</span>
+          <span class="gps-value" id="tel-lon">77.2090°E</span>
+        </div>
+      </div>
+      <div class="gps-map">
+        <canvas id="gps-canvas" width="180" height="100"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== CONTROLS HINT ===== -->
+  <div id="controls-hint">
+    <div class="controls-title">FLIGHT CONTROLS</div>
+    <div class="controls-grid">
+      <div class="control-key">
+        <kbd>W</kbd><span>Throttle Up</span>
+      </div>
+      <div class="control-key">
+        <kbd>S</kbd><span>Throttle Down</span>
+      </div>
+      <div class="control-key">
+        <kbd>A</kbd><span>Turn Left</span>
+      </div>
+      <div class="control-key">
+        <kbd>D</kbd><span>Turn Right</span>
+      </div>
+      <div class="control-key">
+        <kbd>↑</kbd><span>Pitch Up</span>
+      </div>
+      <div class="control-key">
+        <kbd>↓</kbd><span>Pitch Down</span>
+      </div>
+      <div class="control-key">
+        <kbd>Space</kbd><span>Brake</span>
+      </div>
+      <div class="control-key">
+        <kbd>Ctrl+F</kbd><span>Refuel</span>
+      </div>
+    </div>
+    <div class="controls-mouse">
+      <span>🖱 Drag: Orbit Camera</span>
+      <span>🖱 Scroll: Zoom</span>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
