@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <div align="center">
   <img src="https://img.shields.io/badge/Smart%20India%20Hackathon-2026-orange?style=for-the-badge&logo=hackaday" alt="SIH 2026" />
   <img src="https://img.shields.io/badge/Organization-DRDO-blue?style=for-the-badge" alt="DRDO" />
@@ -88,3 +89,6 @@ Team Members
   <p><b>Team Base:</b> ABES Engineering College | <b>Project Lead:</b> <code>Mayank Kumar</code></p>
   <p><i>Ready for Smart India Hackathon 2026</i></p>
 </div>
+=======
+# UAV_Sentinal
+>>>>>>> c481eaa50077b435a43e42beb7159c576f382768
